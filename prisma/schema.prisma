@@ -1,0 +1,856 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     Int                     @id @default(autoincrement())
+  name                   String                  @db.VarChar(50)
+  email                  String                  @unique
+  password               String                  @db.VarChar(60)
+  phoneNumber            String                  @unique @db.VarChar(15)
+  createdAt              DateTime                @default(now())
+  isActive               Boolean                 @default(false)
+  isContactsVerfied      Boolean                 @default(false)
+  isProfileVerified      Boolean                 @default(false)
+  isMembershipVerified   Boolean                 @default(false)
+  isDeleted              Boolean                 @default(false)
+  isEnabled              Boolean                 @default(false)
+  membership             Membership?
+  profile                Profile?
+  Product                Product[]
+  Cart                   Cart?
+  Order                  Order[]
+  leadsAsBuyer           Lead[]                  @relation(name: "Buyer")
+  leadsAsSeller          Lead[]                  @relation(name: "Seller")
+  Discount               Discount[]
+  RFQ                    RFQ[]
+  Quote                  Quote[]
+  MembershipRegistration MembershipRegistration?
+  Address                Address[]
+  Vote                   Vote[]
+  MembershipApproval     MembershipApproval[]
+  Wishlist               Wishlist[]
+  JobPost                JobPost[]
+  Transaction            Transaction[]
+  Ticket                 Ticket[]
+  Response               Response[]
+  Constitution           Constitution?
+  candidateElections     Election[]              @relation("CandidateElections")
+  Policy                 Policy[]
+  Event                  Event[]
+  EventAssignee          EventAssignee[]
+  EventMOMApproval       EventMOMApproval[]
+  EventMOMEditor         Event[]                 @relation("Event_eventMOMEditor")
+  Attendance             Attendance[]
+  Assignees              Task[]                  @relation("TaskAssignees")
+  Assigner               Task[]                  @relation("Assigner")
+  Role                   Role                    @relation(fields: [roleId], references: [id])
+  roleId                 Int
+  Observer               ActivityLog[]           @relation("Observer")
+  InteractedUser         ActivityLog[]           @relation("InteractedUser")
+  UserNotification       UserNotification[]
+  EventAttendance        EventAttendance[]
+  PushToken              PushToken[]
+  Initiative             Initiative[]
+}
+
+model temporaryUser {
+  id                Int      @id @default(autoincrement())
+  email             String   @unique
+  name              String   @db.VarChar(50)
+  password          String   @db.VarChar(60)
+  phoneNumber       String   @unique
+  isEmailVerified   Boolean  @default(false)
+  isPhoneVerified   Boolean  @default(false)
+  emailOtpExpiry    DateTime @default(dbgenerated("now() + interval '30 minutes'"))
+  phoneOtpExpiry    DateTime @default(dbgenerated("now() + interval '30 minutes'"))
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  permissions RolePermission[]
+  users       User[]
+}
+
+model Action {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  permissions RolePermission[]
+}
+
+model RolePermission {
+  id         Int    @id @default(autoincrement())
+  roleId     Int
+  role       Role   @relation(fields: [roleId], references: [id])
+  actionId   Int
+  action     Action @relation(fields: [actionId], references: [id])
+  permission String
+  subject    String
+}
+
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  token     String
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model UserRejection {
+  id          Int      @id @default(autoincrement())
+  reason      String   @db.Text
+  email       String
+  phoneNumber String
+  rejectedBy  String   @db.VarChar(255)
+  createdAt   DateTime @default(now())
+}
+
+model Product {
+  id             Int      @id @default(autoincrement())
+  name           String   @db.VarChar(100)
+  price          Float
+  description    String   @db.Text
+  primaryImage   String   @unique
+  secondaryImage String?  @unique
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  categoryId     Int
+  category       Category @relation(fields: [categoryId], references: [id])
+  leads          Lead[]
+  RFQ            RFQ[]
+}
+
+model Profile {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  user           User     @relation(fields: [userId], references: [id])
+  bio            String?  @db.Text
+  bioVideo       String   @unique
+  country        String   @db.VarChar(56)
+  facebookSocial String?
+  linkedInSocial String?  @db.VarChar(100)
+  calendlyLink   String?  @db.VarChar(100)
+  profilePicture String?  @unique
+  tradeLicense   String   @unique
+  passport       String   @unique
+  emiratesId     String   @unique
+  latitude       Decimal?
+  longitude      Decimal?
+}
+
+model Otp {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  otp        String   @unique
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+}
+
+model Discount {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(50)
+  description  String?  @db.Text
+  discountCode String   @unique
+  value        Int
+  startDate    DateTime
+  validUntil   DateTime
+  isActive     Boolean  @default(true)
+  isFeatured   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Constitution {
+  id           Int       @id @default(autoincrement())
+  title        String
+  version      String    @default("1.0.0")
+  isEditable   Boolean   @default(true)
+  lastEditedBy Int?      @unique
+  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
+  user         User?     @relation(fields: [lastEditedBy], references: [id])
+  articles     Article[]
+}
+
+model Article {
+  id             Int          @id @default(autoincrement())
+  title          String
+  content        String       @db.Text
+  updatedAt      DateTime     @default(now()) @updatedAt
+  constitutionId Int
+  constitution   Constitution @relation(fields: [constitutionId], references: [id])
+  policies       Policy[]
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  slug        String    @unique
+  description String    @db.Text
+  Product     Product[]
+  RFQ         RFQ[]
+}
+
+model Cart {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @unique
+  items             Json
+  originalPrice     Float    @default(0.0)
+  discountedPrice   Float    @default(0.0)
+  isDiscountApplied Boolean  @default(false)
+  discountValue     Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Order {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  items             Json
+  originalPrice     Float    @default(0.0)
+  discountedPrice   Float    @default(0.0)
+  addressId         Int
+  address           Address  @relation(fields: [addressId], references: [id])
+  transactionId     String   @unique
+  isDiscountApplied Boolean  @default(false)
+  discountValue     Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Lead {
+  id        Int            @id @default(autoincrement())
+  buyerId   Int
+  Buyer     User           @relation(name: "Buyer", fields: [buyerId], references: [id])
+  sellerId  Int
+  Seller    User           @relation(name: "Seller", fields: [sellerId], references: [id])
+  productId Int
+  Product   Product        @relation(fields: [productId], references: [id])
+  status    LeadStatusType
+  createdAt DateTime       @default(now())
+}
+
+enum LeadStatusType {
+  ADD_TO_CART
+  REMOVE_FROM_CART
+}
+
+model RFQ {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  user           User      @relation(fields: [userId], references: [id])
+  productId      Int?
+  product        Product?  @relation(fields: [productId], references: [id])
+  title          String    @db.VarChar(150)
+  categoryName   String
+  category       Category  @relation(fields: [categoryName], references: [name])
+  quantity       Int
+  budget         Float
+  deadline       DateTime
+  description    String    @db.Text
+  primaryImage   String?   @unique
+  secondaryImage String?   @unique
+  status         RFQStatus @default(OPEN)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+  quotes         Quote[]   @relation(name: "RFQQuotes")
+  awardedQuoteId Int?      @unique
+  awardedQuote   Quote?    @relation(name: "AwardedQuote", fields: [awardedQuoteId], references: [id])
+}
+
+enum RFQStatus {
+  OPEN
+  CLOSED
+  AWARDED
+}
+
+model Quote {
+  id                 Int      @id @default(autoincrement())
+  rfqId              Int
+  rfq                RFQ      @relation(name: "RFQQuotes", fields: [rfqId], references: [id])
+  userId             Int
+  user               User     @relation(fields: [userId], references: [id])
+  price              Float
+  description        String   @db.Text
+  timeline           DateTime
+  primaryImage       String?  @unique
+  secondaryImage     String?  @unique
+  termsAndConditions String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
+  awardedRFQ         RFQ?     @relation(name: "AwardedQuote")
+  isAwarded          Boolean? @default(false)
+  responses          Response[]
+}
+
+enum AgreeOrNot {
+  YES
+  NO
+}
+
+model BusinessGroup {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  description String?
+  members     Membership[]
+}
+
+model MembershipRegistration {
+  id                          Int      @id @default(autoincrement())
+  userId                      Int      @unique
+  user                        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personalInformation         Json
+  businessInformation         Json?
+  primaryShareholderDetails   Json?
+  secondaryShareholderDetails Json?
+  professionalInformation     Json?
+  membershipPreferences       Json?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @default(now()) @updatedAt
+}
+
+model Membership {
+  id                        Int                  @id @default(autoincrement())
+  userId                    Int                  @unique
+  user                      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emiratesId                String               @unique
+  dateOfBirth               DateTime
+  passportNumber            String               @unique
+  passportExpiryDate        DateTime
+  emiratesIdExpiryDate      DateTime
+  companyName               String
+  city                      String
+  country                   String
+  tradeLicenseNumber        String               @unique
+  tradeLicenseExpiry        DateTime
+  emiratesIssuingAuthority  String
+  yearOfEstablishment       Int
+  affiliation               String
+  legalStatus               String
+  natureOfBusiness          String
+  businessGroup             BusinessGroup[]
+  noOfEmployees             Int
+  vatRegistrationNumber     String               @unique
+  hsCodes                   String[]
+  website                   String
+  keywords                  String[]
+  shareHolderStatus         String
+  otherShareHoldersName     String[]
+  annualRevenue             String?
+  ownershipPercentage       Int?
+  references                String[]
+  professionalTitle         String
+  primeClients              String[]
+  languagesSpoken           String[]
+  yearsOfExperience         Int
+  expectations              String
+  keyObjectives             String[]
+  areaOfInterest            String[]
+  selfDescription           String
+  membershipCategory        String
+  councilDiscoveryMethod    String
+  businessTrainingInterest  AgreeOrNot           @default(NO)
+  clientIntroductionComfort AgreeOrNot           @default(NO)
+  status                    MembershipStatus     @default(PENDING)
+  subscriptionId            String?              @unique
+  paymentVerified           Boolean              @default(false)
+  decision_at               DateTime?
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @default(now()) @updatedAt
+  MembershipApproval        MembershipApproval[]
+  @@index([membershipCategory])
+}
+
+enum MembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model MembershipApproval {
+  id           Int              @id @default(autoincrement())
+  membershipId Int
+  membership   Membership       @relation(fields: [membershipId], references: [id])
+  userId       Int
+  user         User             @relation(fields: [userId], references: [id])
+  status       MembershipStatus
+  comment      String           @db.Text
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @default(now()) @updatedAt
+}
+
+model Address {
+  id           Int     @id @default(autoincrement())
+  userId       Int
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addressLine1 String  @db.VarChar(255)
+  addressLine2 String? @db.VarChar(255)
+  city         String  @db.VarChar(85)
+  country      String  @db.VarChar(56)
+  zipCode      String  @db.VarChar(20)
+  Order        Order[]
+}
+
+enum WishlistStatus {
+  PENDING
+  RESOLVED_AND_CLOSED
+  UNRESOLVED_AND_CLOSED
+}
+
+model Wishlist {
+  id          Int            @id @default(autoincrement())
+  userId      Int
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String         @db.VarChar(255)
+  suggestions String         @db.Text
+  comment     String?        @db.Text
+  status      WishlistStatus @default(PENDING)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
+  responses   Response[]
+}
+
+enum InitiativeStatus {
+  PLANNED
+  ON_GOING
+  FINISHED
+  ABORTED
+}
+
+model Initiative {
+  id             Int                @id @default(autoincrement())
+  userId         Int
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String             @db.VarChar(255)
+  description    String             @db.Text
+  status         InitiativeStatus   @default(PLANNED)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @default(now()) @updatedAt
+  responses      Response[]
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+  FILLED
+}
+
+enum JobApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum JobMode {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+model JobCategory {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  slug     String    @unique
+  JobPosts JobPost[]
+}
+
+model JobSkill {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  JobPosts  JobPost[]
+  createdAt DateTime  @default(now())
+}
+
+model JobApplication {
+  id              Int                  @id @default(autoincrement())
+  jobPostId       Int
+  jobPost         JobPost              @relation(fields: [jobPostId], references: [id])
+  resumeDoc       String
+  applicantName   String               @db.VarChar(150)
+  linkedInProfile String?              @db.VarChar(150)
+  status          JobApplicationStatus @default(PENDING)
+  awardedJobPost  JobPost?             @relation(name: "AcceptedJobApplication")
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @default(now()) @updatedAt
+}
+
+model JobPost {
+  id                       Int              @id @default(autoincrement())
+  title                    String           @db.VarChar(150)
+  description              String           @db.Text
+  deadline                 DateTime
+  status                   JobStatus        @default(OPEN)
+  jobCategoryId            Int
+  jobCategory              JobCategory      @relation(fields: [jobCategoryId], references: [id])
+  userId                   Int
+  user                     User             @relation(fields: [userId], references: [id])
+  JobApplication           JobApplication[]
+  acceptedJobApplicationId Int?             @unique
+  acceptedJobApplication   JobApplication?  @relation(name: "AcceptedJobApplication", fields: [acceptedJobApplicationId], references: [id])
+  minExperience            Int?             @default(0)
+  maxExperience            Int?             @default(0)
+  jobType                  JobType          @default(FULL_TIME)
+  jobMode                  JobMode          @default(ONSITE)
+  location                 String           @db.VarChar(255)
+  linkedInProfile          String?          @db.VarChar(255)
+  twitterProfile           String?          @db.VarChar(255)
+  minSalary                Int?             @default(0)
+  maxSalary                Int?             @default(0)
+  skills                   JobSkill[]
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @default(now()) @updatedAt
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model TransactionCategory {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  slug        String        @unique
+  Transaction Transaction[]
+}
+
+model Transaction {
+  id             Int                 @id @default(autoincrement())
+  zohoExpenseId  String             
+  title          String              @db.VarChar(150)
+  categoryId     Int
+  category       TransactionCategory @relation(fields: [categoryId], references: [id])
+  userId         Int
+  user           User                @relation(fields: [userId], references: [id])
+  amount         Float
+  notes          String?             @db.VarChar(275)
+  primaryImage   String              @unique
+  secondaryImage String?             @unique
+  status         TransactionStatus   @default(PENDING)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @default(now()) @updatedAt
+}
+
+model TicketCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  tickets   Ticket[]
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Ticket {
+  id             Int              @id @default(autoincrement())
+  title          String           @db.VarChar(200)
+  description    String           @db.Text
+  status         TicketStatus     @default(OPEN)
+  priority       TicketPriority   @default(MEDIUM)
+  userId         Int
+  user           User             @relation(fields: [userId], references: [id])
+  categoryId     Int
+  category       TicketCategory   @relation(fields: [categoryId], references: [id])
+  primaryImage   String?          @unique
+  secondaryImage String?          @unique
+  tertiaryImage  String?          @unique
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+  responses      Response[]
+}
+
+model Response {
+  id             Int         @id @default(autoincrement())
+  response       String      @db.Text
+  ticketId       Int?
+  ticket         Ticket?     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  wishlistId     Int?
+  wishlist       Wishlist?   @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  taskId         Int?
+  task           Task?       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  quoteId        Int?
+  quote          Quote?      @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  initiativeId   Int?
+  initiative     Initiative? @relation(fields: [initiativeId], references: [id], onDelete: Cascade)
+  userId         Int
+  user           User        @relation(fields: [userId], references: [id])
+  createdAt      DateTime    @default(now())
+}
+
+enum ElectionType {
+  CANDIDATE_ELECTION
+  POLICY_ELECTION
+  POLLING_ELECTION
+}
+
+enum ElectionState {
+  ACTIVE
+  SUCCESSFUL
+  UNSUCCESSFUL
+}
+
+model Election {
+  id               Int           @id @default(autoincrement())
+  title            String        @db.VarChar(100)
+  description      String        @db.Text
+  type             ElectionType  @default(CANDIDATE_ELECTION)
+  startDate        DateTime      @default(now())
+  endDate          DateTime
+  candidates       User[]        @relation("CandidateElections")
+  pollOptions      String[]      @default([]) @db.Text
+  policyId         Int?
+  policy           Policy?       @relation(fields: [policyId], references: [id])
+  votes            Vote[]        @relation("ElectionVotes")
+  electedId        Int?
+  electedVotes     Int?
+  winningOption    String?
+  winningPollVotes Int?
+  policyVotes      String?
+  state            ElectionState @default(ACTIVE)
+  outcome          String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now()) @updatedAt
+}
+
+model Vote {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vote       String
+  electionId Int
+  election   Election @relation("ElectionVotes", fields: [electionId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, electionId])
+}
+
+enum PolicyType {
+  CONSTITUTION
+  POLICY
+}
+
+enum PolicyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Policy {
+  id          Int          @id @default(autoincrement())
+  title       String       @db.VarChar(100)
+  description String       @db.Text
+  newVersion  String?
+  type        PolicyType   @default(POLICY)
+  status      PolicyStatus @default(PENDING)
+  articleId   Int?
+  article     Article?     @relation(fields: [articleId], references: [id])
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  elections   Election[]
+}
+
+enum EventType {
+  BOARD_MEETING
+  REGULAR_EVENT
+}
+
+enum EventActionPointStatus {
+  PENDING
+  COMPLETED
+  TRANSFERRED
+}
+enum EventMOMApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NOT_SUBMITTED
+}
+
+model Event {
+  id               Int                     @id @default(autoincrement())
+  title            String                  @db.VarChar(150)
+  details          String                  @db.Text
+  startDate        DateTime
+  endDate          DateTime
+  venue            String                  @db.Text
+  userId           Int
+  user             User                    @relation(fields: [userId], references: [id])
+  eventType        EventType               @default(REGULAR_EVENT)
+  EventAssignee    EventAssignee[]
+  EventMOMApproval EventMOMApproval[]
+  EventMedia       EventMedia[]
+  eventMOM         String?                 @db.Text
+  eventMOMEditorId Int?
+  eventMOMEditor   User?                   @relation("Event_eventMOMEditor", fields: [eventMOMEditorId], references: [id])
+  eventMOMStatus   EventMOMApprovalStatus? @default(NOT_SUBMITTED)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @default(now()) @updatedAt
+  EventAttendance  EventAttendance[]
+  EventActionPoint EventActionPoint[]
+}
+
+model EventActionPoint {
+  id          Int                      @id @default(autoincrement())
+  eventId     Int
+  event       Event                    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  description String
+  status      EventActionPointStatus   @default(PENDING)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+}
+
+model EventMedia {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  assetURL  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model EventAssignee {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([eventId, userId])
+}
+
+model EventMOMApproval {
+  id        Int                    @id @default(autoincrement())
+  eventId   Int
+  event     Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    EventMOMApprovalStatus @default(PENDING)
+  comment   String?                @db.Text
+  createdAt DateTime               @default(now())
+
+  @@unique([eventId, userId])
+}
+
+enum EventAttendanceStatus {
+  ATTENDED
+  NOT_ATTENDED
+}
+
+model EventAttendance {
+  id        Int                   @id @default(autoincrement())
+  eventId   Int
+  event     Event                 @relation(fields: [eventId], references: [id])
+  userId    Int
+  user      User                  @relation(fields: [userId], references: [id])
+  status    EventAttendanceStatus @default(NOT_ATTENDED)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @default(now()) @updatedAt
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String     @db.VarChar(150)
+  description String     @db.Text
+  status      TaskStatus @default(PENDING)
+  assignees   User[]     @relation("TaskAssignees")
+  assignerId  Int
+  assigner    User       @relation("Assigner", fields: [assignerId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  responses   Response[]
+}
+
+model Attendance {
+  id          Int       @id @default(autoincrement())
+  tasks       String    @default("") @db.Text
+  clockIn     DateTime  @default(now())
+  clockOut    DateTime?
+  locationIn  String    @db.VarChar(255)
+  locationOut String?   @db.VarChar(255)
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+enum Interaction {
+  CLICK
+  COPY
+}
+
+enum InteractionType {
+  EMAIL
+  PHONE
+}
+
+model ActivityLog {
+  id               Int             @id @default(autoincrement())
+  observerId       Int
+  interactedUserId Int
+  interaction      Interaction     @default(CLICK)
+  interactionType  InteractionType @default(EMAIL)
+  createdAt        DateTime        @default(now())
+  Observer         User            @relation("Observer", fields: [observerId], references: [id])
+  InteractedUser   User            @relation("InteractedUser", fields: [interactedUserId], references: [id])
+}
+
+enum UserNotificationStatus {
+  UNREAD
+  READ
+}
+
+model UserNotification {
+  id        Int                    @id @default(autoincrement())
+  userId    Int
+  User      User                   @relation(fields: [userId], references: [id])
+  message   String                 @db.VarChar(255)
+  status    UserNotificationStatus @default(UNREAD)
+  createdAt DateTime               @default(now())
+}
