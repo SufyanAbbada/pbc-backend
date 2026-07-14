@@ -553,15 +553,6 @@ export interface UserNotification {
   status: UserNotificationStatus;
 }
 
-export interface ExpoPushTicket {
-  id?: string;
-  status: string;
-  message?: string;
-  details?: {
-    error?: string;
-  };
-}
-
 export interface ZohoExpenseAccount {
   account_type: string;
   account_name: string;

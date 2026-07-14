@@ -7,7 +7,6 @@ import {
   BusinessGroup,
 } from "@prisma/client";
 import { hashPassword } from "../src/utils/passwordHandler";
-import { generateAccessTokenForChat } from "../src/services/twilioService";
 import { faker } from "@faker-js/faker";
 import { MembershipCategory, RoleId } from "../src/common/enums";
 
@@ -499,7 +498,6 @@ async function seedDatabase() {
             roleId: roleIdMap[role],
           },
         });
-        generateAccessTokenForChat(email);
         users.push(user);
       }
     }
@@ -532,7 +530,6 @@ async function seedDatabase() {
             roleId: RoleId.ADMIN,
           },
         });
-        generateAccessTokenForChat(email);
         users.push(user);
       }
     }

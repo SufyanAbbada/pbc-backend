@@ -91,8 +91,9 @@ const requestAndResponseLogger = (
 
     const formattedResponse = formatData(responseBody);
 
-    logger.info(
-      `
+    if (req.originalUrl !== "/api/user/roles")
+      logger.info(
+        `
 [Request]:
 
 🔹 Method: ${req.method}
@@ -107,7 +108,7 @@ const requestAndResponseLogger = (
 🔹 Duration: ${duration}ms
 🔹 Body:\n${formattedResponse}
     `.trim(),
-    );
+      );
   });
 
   next();

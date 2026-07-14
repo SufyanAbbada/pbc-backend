@@ -1,6 +1,5 @@
 import UserRepository from "../repositories/UserRepository";
 import UserNotificationRepository from "../repositories/userNotificationsRepository";
-import expoNotificationService from "../services/expoNotificationService";
 import { sendEmail } from "../services/twilioService";
 import {
   eventInvitationEmailTemplate,
@@ -48,13 +47,8 @@ const sendEventEmailAndNotification = async (
         notificationContent,
       );
 
-      await expoNotificationService.sendMultiUserNotification(
-        [userId],
-        "New Event Invitation",
-        `${assignerName} has invited you to ${title} starting on ${formatDate(startDate)}`,
-        {
-          type: "EVENT_INVITATION",
-        },
+      console.info(
+        `[Notification] Stored event invitation notification for user ${userId}. Expo push is disabled.`,
       );
     }
   }

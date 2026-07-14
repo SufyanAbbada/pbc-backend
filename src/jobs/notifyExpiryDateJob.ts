@@ -1,7 +1,6 @@
 import cron from "node-cron";
 import membershipRepository from "../repositories/membershipRepository";
 import UserNotificationRepository from "../repositories/userNotificationsRepository";
-import expoNotificationService from "../services/expoNotificationService";
 import { sendEmail } from "../services/twilioService";
 import {
   addDaysToDate,
@@ -62,17 +61,8 @@ async function checkAndNotifyMembershipExpiry() {
             }),
           );
 
-          await expoNotificationService.sendMultiUserNotification(
-            [membership.user.id],
-            `${attribute} Expiry`,
-            `Your ${attribute} is expiring in ${period}. Please take action.`,
-            {
-              type: "EXPIRY_NOTIFICATION",
-            },
-          );
-
           console.log(
-            `Sent ${attribute.toLowerCase()} expiry email & notification to ${membership.user.email} (expires in ${period})`,
+            `Processed ${attribute.toLowerCase()} expiry email & in-app notification for ${membership.user.email} (expires in ${period}). Expo push is disabled.`,
           );
         };
 

@@ -1,5 +1,6 @@
 import { S3ServiceException } from "@aws-sdk/client-s3";
 import { Response } from "express";
+import { ThirdPartyServiceDisabledError } from "./thirdPartyServiceErrors";
 
 const generalErrorResponse = (error: any, res: Response): void => {
   if (
@@ -16,7 +17,20 @@ const generalErrorResponse = (error: any, res: Response): void => {
       ],
     });
     return;
-  } else if (error.stack.includes("Zoho")) {
+  } else if (error instanceof ThirdPartyServiceDisabledError) {
+    console.warn(
+      `${error.serviceName} skipped for ${error.featureName}: missing configuration or explicitly disabled.`,
+    );
+    res.status(503).json({
+      error: [
+        {
+          path: error.serviceName,
+          msg: `${error.featureName} is currently disabled because ${error.serviceName} is not configured. The rest of the application can continue running.`,
+        },
+      ],
+    });
+    return;
+  } else if (error.stack?.includes("Zoho")) {
     console.error("\Zoho Books Error:", error);
     res.status(400).json({
       error: [

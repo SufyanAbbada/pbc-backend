@@ -1,7 +1,5 @@
 import PushTokenRepository from "../repositories/pushTokenRepository";
-import expoNotificationService from "../services/expoNotificationService";
 import generalErrorResponse from "../utils/generalErrorResponse";
-import { User } from "@prisma/client";
 import { Request, Response } from "express";
 
 class PushTokenController {
@@ -86,31 +84,17 @@ class PushTokenController {
 
   // * This method must be called after `validateUsersExistenceByEmails` middleware
   async sendCallNotification(req: Request, res: Response) {
-    try {
-      const { callFrom, callType, roomName, type, users } = req.body;
-
-      const userIds = users.map((user: User) => user.id);
-
-      const results = await expoNotificationService.sendMultiUserNotification(
-        userIds,
-        `Incoming Call from ${callFrom}`,
-        `You have a ${callType} call`,
+    console.info(
+      "[Push Notification] Call notification requested, but Expo push is disabled.",
+    );
+    return res.status(410).json({
+      error: [
         {
-          type,
-          callType,
-          roomName,
-          caller: callFrom,
+          path: "pushNotification",
+          msg: "Expo push notifications are disabled in this environment.",
         },
-        "ringtone",
-      );
-
-      return res.status(200).json({
-        message: "Call notifications sent successfully",
-        data: results,
-      });
-    } catch (error: any) {
-      return generalErrorResponse(error, res);
-    }
+      ],
+    });
   }
 }
 

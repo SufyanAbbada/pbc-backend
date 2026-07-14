@@ -2,7 +2,6 @@ import cron from "node-cron";
 import sendEventAttendingAppreciationEmail from "../utils/sendEventAttendingAppreciationNotifiers";
 import eventRepository from "../repositories/EventRepository";
 import UserRepository from "../repositories/UserRepository";
-import expoNotificationService from "../services/expoNotificationService";
 
 async function sendEventAttendingAppreciationMails() {
   try {
@@ -20,13 +19,8 @@ async function sendEventAttendingAppreciationMails() {
         event.startDate,
       );
 
-      await expoNotificationService.sendMultiUserNotification(
-        userIdsArray,
-        "Event Appreciation",
-        `Thank you for attending ${event.title}`,
-        {
-          type: "EVENT_APPRECIATION",
-        },
+      console.info(
+        `[Notification] Event appreciation processed for event ${event.id}. Expo push is disabled.`,
       );
     }
   } catch (error) {

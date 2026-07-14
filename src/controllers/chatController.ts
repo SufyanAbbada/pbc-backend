@@ -1,41 +1,32 @@
-import generalErrorResponse from "../utils/generalErrorResponse";
-import {
-  generateAccessTokenForChat,
-  generateAccessTokenForCall,
-} from "../services/twilioService";
 import { Request, Response } from "express";
 
 class ChatController {
   async generateTokenForChat(req: Request, res: Response) {
-    try {
-      const { user } = req.body;
-      const conversationAccessToken = generateAccessTokenForChat(user.email);
-
-      res.status(200).json({
-        message: "Token for Chat Generated Successfully.",
-        data: {
-          conversationAccessToken,
+    console.info(
+      "[Chat] Twilio Conversations token requested, but chat is disabled.",
+    );
+    return res.status(410).json({
+      error: [
+        {
+          path: "chat",
+          msg: "Chat is disabled. Twilio Conversations is not used in this environment.",
         },
-      });
-    } catch (error: any) {
-      return generalErrorResponse(error, res);
-    }
+      ],
+    });
   }
 
   async generateTokenForCall(req: Request, res: Response) {
-    try {
-      const { user, room } = req.body;
-      const callAccessToken = generateAccessTokenForCall(user.email, room);
-
-      res.status(200).json({
-        message: "Token for Video/Audio Call Generated Successfully.",
-        data: {
-          callAccessToken,
+    console.info(
+      "[Chat] Twilio Video token requested, but calls are disabled.",
+    );
+    return res.status(410).json({
+      error: [
+        {
+          path: "call",
+          msg: "Audio/video calls are disabled. Twilio Video is not used in this environment.",
         },
-      });
-    } catch (error: any) {
-      return generalErrorResponse(error, res);
-    }
+      ],
+    });
   }
 }
 

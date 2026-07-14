@@ -21,6 +21,9 @@ const sendEventAttendingAppreciationEmail = async (
         `Thanks for Attending ${title}`,
         emailContent,
       );
+      console.info(
+        `[Notification] Event appreciation email processed for user ${userId}.`,
+      );
     }
   }
 };

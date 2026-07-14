@@ -23,7 +23,6 @@ import {
   BusinessGroup,
 } from "@prisma/client";
 import { hashPassword } from "../src/utils/passwordHandler";
-import { generateAccessTokenForChat } from "../src/services/twilioService";
 import { faker } from "@faker-js/faker";
 import {
   CategoryType,
@@ -464,7 +463,6 @@ async function seedDatabase() {
           roleId: dbRoles[role],
         },
       });
-      generateAccessTokenForChat(email);
       users.push(user);
     }
   }
@@ -497,7 +495,6 @@ async function seedDatabase() {
           roleId: dbRoles[extractIdFromRoles(4)],
         },
       });
-      generateAccessTokenForChat(email);
       users.push(user);
     }
   }
@@ -530,7 +527,6 @@ async function seedDatabase() {
         roleId: dbRoles[extractIdFromRoles(Math.floor(Math.random() * 5))],
       },
     });
-    generateAccessTokenForChat(email);
     users.push(user);
   }
 

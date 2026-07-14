@@ -2,7 +2,6 @@ import MembershipApprovalRepository from "../repositories/membershipApprovalRepo
 import generalErrorResponse from "../utils/generalErrorResponse";
 import UserRepository from "../repositories/UserRepository";
 import membershipRepository from "../repositories/membershipRepository";
-import expoNotificationService from "../services/expoNotificationService";
 import { Request, Response } from "express";
 import { RoleId, UpdateGeneralStatus } from "../common/enums";
 import { sendEmail } from "../services/twilioService";
@@ -45,13 +44,8 @@ class MembershipApprovalController {
             true,
           );
 
-          await expoNotificationService.sendMultiUserNotification(
-            [updatedMembership.userId],
-            `Membership Approved`,
-            `Your membership has been approved for Pakistan Business Council.`,
-            {
-              type: "MEMBERSHIP_NOTIFICATION",
-            },
+          console.info(
+            `[Notification] Membership approval processed for user ${updatedMembership.userId}. Expo push is disabled.`,
           );
         }
       }
@@ -89,12 +83,8 @@ class MembershipApprovalController {
       );
       await Promise.all(membershipEmailTasks);
 
-      await expoNotificationService.sendMultiUserNotification(
-        users.map((user) => user.id),
-        "Membership Update",
-        eligibleForApproval
-          ? `Membership of the user ${membership.membership.user.name} has been ${status.toLowerCase()}.`
-          : `A membership decision has been made by ${name} for the user ${membership.membership.user.name}. Please check your email for details.`,
+      console.info(
+        `[Notification] Membership update emails processed for ${users.length} users. Expo push is disabled.`,
       );
 
       return res.status(201).json({
