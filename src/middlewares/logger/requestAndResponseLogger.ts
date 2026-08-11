@@ -11,6 +11,39 @@ type formatDataType =
   | null
   | undefined;
 
+const omittedLogFields = new Set(["role", "roles", "permissions"]);
+const sensitiveLogFields = new Set([
+  "authorization",
+  "cookie",
+  "set-cookie",
+  "token",
+]);
+
+const sanitizeDataForLogging = (data: formatDataType): formatDataType => {
+  if (!data || typeof data !== "object" || Buffer.isBuffer(data)) return data;
+
+  if (Array.isArray(data)) {
+    return data.map((item) => sanitizeDataForLogging(item));
+  }
+
+  return Object.entries(data).reduce<Record<string, unknown>>(
+    (sanitizedData, [key, value]) => {
+      const normalizedKey = key.toLowerCase();
+
+      if (omittedLogFields.has(normalizedKey)) {
+        sanitizedData[key] = "[OMITTED FROM LOGS]";
+      } else if (sensitiveLogFields.has(normalizedKey)) {
+        sanitizedData[key] = "[REDACTED]";
+      } else {
+        sanitizedData[key] = sanitizeDataForLogging(value);
+      }
+
+      return sanitizedData;
+    },
+    {},
+  );
+};
+
 const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
@@ -83,23 +116,22 @@ const requestAndResponseLogger = (
 
     if (originalRequestBody) {
       if (Array.isArray(originalRequestBody)) {
-        requestBody = `Array with ${originalRequestBody.length} items:\n${formatData(originalRequestBody)}`;
+        requestBody = `Array with ${originalRequestBody.length} items:\n${formatData(sanitizeDataForLogging(originalRequestBody))}`;
       } else if (Object.keys(originalRequestBody).length) {
-        requestBody = formatData(originalRequestBody);
+        requestBody = formatData(sanitizeDataForLogging(originalRequestBody));
       }
     }
 
-    const formattedResponse = formatData(responseBody);
+    const formattedResponse = formatData(sanitizeDataForLogging(responseBody));
 
-    if (req.originalUrl !== "/api/user/roles")
-      logger.info(
-        `
+    logger.info(
+      `
 [Request]:
 
 🔹 Method: ${req.method}
 🔹 URL: ${req.originalUrl}
-🔹 Headers:\n${formatData(req.headers)}
-🔹 Query:\n${formatData(req.query)}
+🔹 Headers:\n${formatData(sanitizeDataForLogging(req.headers))}
+🔹 Query:\n${formatData(sanitizeDataForLogging(req.query))}
 🔹 Payload: ${requestBody}
 
 [Response]:
@@ -108,7 +140,7 @@ const requestAndResponseLogger = (
 🔹 Duration: ${duration}ms
 🔹 Body:\n${formattedResponse}
     `.trim(),
-      );
+    );
   });
 
   next();
