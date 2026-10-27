@@ -16,7 +16,6 @@ jobs:
 
     env:
       IMAGE: muhammadarslanrevoech/pbc-api:sha-${{ github.event.workflow_run.head_sha }}
-      echo: "$IMAGE"
 
     steps:
       - name: Authenticate with Docker Again
@@ -35,7 +34,6 @@ jobs:
         run: |
           echo "Running the Container"
           docker run \
-            --detach \
             --name pbc-api-check \
             --publish 127.0.0.1:3000:3000 \
             --env PORT=3000 \
