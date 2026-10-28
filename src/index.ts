@@ -59,4 +59,5 @@ cleanupExpiredTempUsers.setupTempUserCleanupJob();
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Application up and running on http://localhost:${PORT}`);
+  console.log("This is from Staging Branch");
 });
