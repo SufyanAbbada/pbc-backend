@@ -1,0 +1,45 @@
+name: Manually publish backend image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish_selected_branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Download the selected branch
+        uses: actions/checkout@v6
+      - name: Show the selected branch and commit
+        env:
+          SELECTED_BRANCH: ${{ github.ref_name }}
+        run: |
+          echo "Selected branch: $SELECTED_BRANCH"
+          echo "Checked-out commit:"
+          git rev-parse HEAD
+          echo "Latest commit details:"
+          git log -1 --oneline
+      - name: Prepare the image name
+        run: |
+          COMMIT_SHA=$(git rev-parse HEAD)
+          IMAGE="muhammadarslanrevoech/pbc-api:manual-$COMMIT_SHA"
+
+          echo "Image to build: $IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      - name: Authenticate with Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and publish the selected branch
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          target: runtime
+          push: true
+          tags: ${{ env.IMAGE }}
