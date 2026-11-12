@@ -5,10 +5,6 @@ pipeline {
         skipDefaultCheckout()
     }
 
-    triggers {
-        pollSCM('* * * * *')
-    }
-
     stages {
         stage('Inspect build machine') {
             steps {
